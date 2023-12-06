@@ -3,7 +3,7 @@ import sys
 import random
 from datetime import datetime
 from KRG import KakuroRandomGame
-from KUI import KakuroUI
+from KUI import KakuroUI, load_another
 from tkinter import Tk
 import time
 
@@ -14,9 +14,4 @@ WIDTH = HEIGHT = MARGIN * 2 + SIDE * 9
 
 
 if __name__ == '__main__':
-    game = KakuroRandomGame()
-    root = Tk()
-    ui = KakuroUI(root, game)
-    root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
-    root.mainloop()
-    ui.solve()
+    load_another()
