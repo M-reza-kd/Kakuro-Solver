@@ -149,15 +149,15 @@ class KakuroUI(Frame):
 
     def draw_victory(self):
         self.canvas.create_oval(
-            MARGIN + SIDE * 2, MARGIN + SIDE * 2,
-            MARGIN + SIDE * 7, MARGIN + SIDE * 7,
+            MARGIN - 10, MARGIN - 10,
+            MARGIN + 50, MARGIN + 50,
             tags="victory", fill="dark orange", outline="orange"
         )
         self.canvas.create_text(
-            MARGIN + 4 * SIDE + SIDE / 2,
-            MARGIN + 4 * SIDE + SIDE / 2,
+            MARGIN + 22,
+            MARGIN + 22,
             text="Correct!", tags="victory",
-            fill="white", font=("Ubuntu", 32)
+            fill="white", font=("Ubuntu", 11)
         )
 
     def road(self, addr):
