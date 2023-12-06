@@ -1,12 +1,14 @@
 import math
 import random
+import sys
 from tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, RIGHT
 from BTK import BackTrackSolver
-
+from KRG import KakuroRandomGame
 
 MARGIN = 20
 SIDE = 50
 WIDTH = HEIGHT = MARGIN * 2 + SIDE * 9
+
 
 class KakuroError(Exception):
     """
@@ -14,20 +16,32 @@ class KakuroError(Exception):
     """
     pass
 
+
+def load_another():
+    game = KakuroRandomGame()
+    root = Tk()
+    ui = KakuroUI(root, game)
+    root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
+    root.mainloop()
+    ui.solve()
+
+
 class KakuroUI(Frame):
     """
     The Tkinter UI: draw the board and accept input
     """
+
     def __init__(self, parent, game):
         self.game = game
         Frame.__init__(self, parent)
         self.parent = parent
         self.row, self.col = -1, -1
+        self.back_track_solver = BackTrackSolver(game.data_table)
         self.initUI()
 
     def initUI(self):
         if self.game.gameId != 0:
-            self.parent.title("Kakuro | Puzzle: "+str(self.game.gameId))
+            self.parent.title("Kakuro | Puzzle: " + str(self.game.gameId))
         else:
             self.parent.title("Kakuro | Puzzle: Custom")
         self.pack(fill=BOTH, expand=1)
@@ -35,11 +49,11 @@ class KakuroUI(Frame):
         self.canvas.pack(fill=BOTH, side=TOP)
 
         solve_button = Button(self, text="Solve!", command=self.solve)
-        solve_button.pack(side=RIGHT, padx = 10)
+        solve_button.pack(side=RIGHT, padx=10)
         clear_button = Button(self, text="Clear answers", command=self.clear_answers)
         clear_button.pack(side=RIGHT)
-        try_button = Button(self, text="Try another", command=self.load_another)
-        try_button.pack(side=RIGHT, padx = 10)
+        try_button = Button(self, text="Try another", command=load_another)
+        try_button.pack(side=RIGHT, padx=10)
 
         self.draw_grid()
         self.draw_puzzle()
@@ -74,16 +88,15 @@ class KakuroUI(Frame):
                 if [i, j] not in self.game.data_fills:
                     self.canvas.create_rectangle(MARGIN + j * SIDE + 1, MARGIN + i * SIDE + 1,
                                                  MARGIN + j * SIDE + SIDE - 2, MARGIN + i * SIDE + SIDE - 2,
-                                                 outline="gray", fill="gray", tag = "grays")
+                                                 outline="gray", fill="gray", tag="grays")
                     self.canvas.create_line(
                         MARGIN + j * SIDE, MARGIN + i * SIDE,
                         MARGIN + j * SIDE + SIDE, MARGIN + i * SIDE + SIDE,
-                        width=2, tag = "grayliners"
+                        width=2, tag="grayliners"
                     )
 
     def draw_puzzle(self):
         self.canvas.delete("numbersfilled")
-        print(self.game.data_totals)
         for elem in self.game.data_totals:
             i = elem[2]
             j = elem[3]
@@ -112,15 +125,15 @@ class KakuroUI(Frame):
         self.canvas.delete("cursor")
         if self.row >= 0 and self.col >= 0:
             self.canvas.create_rectangle(
-                MARGIN + self.col * SIDE + 1,
-                MARGIN + self.row * SIDE + 1,
-                MARGIN + (self.col + 1) * SIDE - 1,
-                MARGIN + (self.row + 1) * SIDE - 1,
+                MARGIN + math.floor(self.col) * SIDE + 1,
+                MARGIN + math.floor(self.row) * SIDE + 1,
+                MARGIN + (math.floor(self.col) + 1) * SIDE - 1,
+                MARGIN + (math.floor(self.row) + 1) * SIDE - 1,
                 outline="red", tags="cursor"
             )
 
     def create_circs(self, addrs):
-        if len(addrs)==0:
+        if len(addrs) == 0:
             return
         for elem in addrs:
             self.canvas.create_oval(
@@ -147,8 +160,8 @@ class KakuroUI(Frame):
         if self.game.game_over:
             return
         x, y = event.x, event.y
-        if (x > MARGIN and x < WIDTH - MARGIN and
-                y > MARGIN and y < HEIGHT - MARGIN):
+        if (MARGIN < x < WIDTH - MARGIN and
+                MARGIN < y < HEIGHT - MARGIN):
             self.canvas.focus_set()
             row, col = (y - MARGIN) / SIDE, (x - MARGIN) / SIDE
             self.row, self.col = row, col
@@ -161,13 +174,13 @@ class KakuroUI(Frame):
             return False
         elif addr[0] == self.row:
             curr_row = self.row
-            for iter in range(min(addr[1],self.col), max(addr[1],self.col)):
+            for iter in range(min(addr[1], self.col), max(addr[1], self.col)):
                 if [curr_row, iter] not in self.game.data_fills:
                     return False
             return True
         else:
             curr_col = self.col
-            for iter in range(min(addr[0],self.row), max(addr[0],self.row)):
+            for iter in range(min(addr[0], self.row), max(addr[0], self.row)):
                 if [iter, curr_col] not in self.game.data_fills:
                     return False
             return True
@@ -177,20 +190,20 @@ class KakuroUI(Frame):
         self.canvas.delete("circ")
         if self.game.game_over:
             return
-        print(math.floor(self.row), math.floor(self.col))
         row, col = math.floor(self.row), math.floor(self.col)
-        if self.row >= 0 and self.col >= 0 and event.char in "123456789" and event.char!='' and [row, col] in self.game.data_fills:
+        if self.row >= 0 and self.col >= 0 and event.char in "123456789" and event.char != '' and [row,
+                                                                                                   col] in self.game.data_fills:
             found_flag = False
             for ind, item in enumerate(self.game.data_filled):
-                if item[0]==row and item[1]==col:
+                if item[0] == row and item[1] == col:
                     found_flag = True
                     self.game.data_filled[ind][2] = int(event.char)
-            if(not found_flag):
+            if (not found_flag):
                 self.game.data_filled = self.game.data_filled + [[row, col, int(event.char)]]
 
             circlists = []
             for elem in self.game.data_filled:
-                if self.road(elem) and elem[2]==int(event.char):
+                if self.road(elem) and elem[2] == int(event.char):
                     if [row, col] not in circlists:
                         circlists = circlists + [[row, col]]
                     if [elem[0], elem[1]] not in circlists:
@@ -213,7 +226,7 @@ class KakuroUI(Frame):
         self.canvas.delete("victory")
         if self.game.game_over:
             return
-        if self.row >= 0 and self.col >= 0 and self.row < 8:
+        if 0 <= self.row < 8 and self.col >= 0:
             self.row = self.row + 1
             self.draw_cursor()
 
@@ -221,7 +234,7 @@ class KakuroUI(Frame):
         self.canvas.delete("victory")
         if self.game.game_over:
             return
-        if self.row >= 0 and self.col >= 0 and self.col <8:
+        if self.row >= 0 and 0 <= self.col < 8:
             self.col = self.col + 1
             self.draw_cursor()
 
@@ -238,11 +251,11 @@ class KakuroUI(Frame):
         self.canvas.delete("circ")
         if self.game.game_over:
             return
-        if self.row >=0 and self.col >=0:
-            self.game.data_filled = [item for item in self.game.data_filled if item[0]!=self.row or item[1]!=self.col]
+        if self.row >= 0 and self.col >= 0:
+            self.game.data_filled = [item for item in self.game.data_filled if
+                                     item[0] != self.row or item[1] != self.col]
         self.draw_cursor()
         self.draw_puzzle()
-
 
     def clear_answers(self):
         self.game.data_filled = []
@@ -255,28 +268,28 @@ class KakuroUI(Frame):
         self.canvas.delete("circ")
         if self.game.game_over:
             return
+        self.game.data_table[row][col] = value
         if [row, col] in self.game.data_fills:
             found_flag = False
             for ind, item in enumerate(self.game.data_filled):
-                if item[0]==row and item[1]==col:
+                if item[0] == row and item[1] == col:
                     found_flag = True
                     self.game.data_filled[ind][2] = value
-            if(not found_flag):
+            if not found_flag:
                 self.game.data_filled = self.game.data_filled + [[row, col, value]]
 
             circlists = []
             for elem in self.game.data_filled:
-                if self.road(elem) and elem[2]==value:
+                if self.road(elem) and elem[2] == value:
                     if [row, col] not in circlists:
                         circlists = circlists + [[row, col]]
                     if [elem[0], elem[1]] not in circlists:
                         circlists = circlists + [[elem[0], elem[1]]]
             self.create_circs(circlists)
-            self.draw_puzzle()
             self.draw_cursor()
-            if self.game.check_win():
-                self.draw_victory()
-
+            self.draw_puzzle()
+            #if self.game.check_win():
+                #self.draw_victory()
 
     def solve(self):
         self.game.data_filled = []
@@ -284,163 +297,42 @@ class KakuroUI(Frame):
         self.canvas.delete("circ")
         options = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         # Remember to zero down the indices
-        vals = options
-        rows = options
-        cols = options
 
-        # creating constraints
-        #for [i , j] in self.game.data_fills:
-            
+        for [i, j] in self.game.data_fills:
+            self.back_track_solver.add_variable([i, j], options)
 
-        """ prob = LpProblem("Kakuro Problem", LpMinimize)
-        choices = LpVariable.dicts("Choice", (vals, rows, cols), 0, 1, LpInteger)
-        # The complete set of boolean choices
-        prob += 0, "Arbitrary Objective Function"
-        # Force singular values. Even for extraneous ones
-        for r in rows:
-            for c in cols:
-                prob += lpSum([choices[v][r][c] for v in vals]) == 1, ""
+        # print("unassigned variables", back_track_solver.unassigned_var)
+        constraint_num = 0
+        variable_constrain_number = {}
+        for [total_sum, row_or_col, i, j] in self.game.data_totals:
+            var_list = []
+            if row_or_col == 'v':
+                for i1 in range(i + 1, 9):
+                    if self.game.data_table[i1][j] == 'x':
+                        break
+                    if (i1, j) in variable_constrain_number:
+                        variable_constrain_number[(i1, j)].append(constraint_num)
+                    else:
+                        variable_constrain_number[(i1, j)] = [constraint_num]
+                    var_list.append([i1, j])
+            else:
+                for j1 in range(j + 1, 9):
+                    if self.game.data_table[i][j1] == 'x':
+                        break
+                    if (i, j1) in variable_constrain_number:
+                        variable_constrain_number[(i, j1)].append(constraint_num)
+                    else:
+                        variable_constrain_number[(i, j1)] = [constraint_num]
+                    var_list.append([i, j1])
+            # print("constraint_num :", constraint_num, [[var_list, total_sum], BT_constraint])
+            self.back_track_solver.add_constraint([var_list, total_sum])
+            constraint_num += 1
 
+        # print("variable constraints number : \n", variable_constrain_number)
+        self.back_track_solver.var_constraint = variable_constrain_number
+        solutions = self.back_track_solver.solve()[0]
+        print("solution number : \n", solutions)
 
-        # Force uniqueness in each 'zone' and sum constraint for that zone
-        # Row zones
-        for r in rows:
-            zonecolsholder = []
-            activated = False
-            zonecolssumholder = 0
-            for c in cols:
-                if not activated and [int(r)-1,int(c)-1] in self.game.data_fills:
-                    activated = True
-                    zonecolsholder = zonecolsholder +[c]
-                    zonecolssumholder = [elem[0] for elem in self.game.data_totals if elem[1]=='h' and elem[2] == int(r)-1 and elem[3] == int(c)-2][0]
-                    if c == "9":
-                        # Uniqueness in that zone of columns
-                        for v in vals:
-                            prob += lpSum([choices[v][r][co] for co in zonecolsholder]) <= 1, ""
-                        # Sum constraint for that zone of columns
-                        prob += lpSum([int(v) * choices[v][r][co] for v in vals for co in zonecolsholder]) == zonecolssumholder, ""
-                elif activated and [int(r)-1,int(c)-1] in self.game.data_fills:
-                    zonecolsholder = zonecolsholder + [c]
-                    if c == "9":
-                        # Uniqueness in that zone of columns
-                        for v in vals:
-                            prob += lpSum([choices[v][r][co] for co in zonecolsholder]) <= 1, ""
-                        # Sum constraint for that zone of columns
-                        prob += lpSum([int(v) * choices[v][r][co] for v in vals for co in zonecolsholder]) == zonecolssumholder, ""
-                elif activated and [int(r)-1,int(c)-1] not in self.game.data_fills:
-                    activated = False
-                    # Uniqueness in that zone of columns
-                    for v in vals:
-                        prob += lpSum([choices[v][r][co] for co in zonecolsholder]) <= 1, ""
-                    # Sum constraint for that zone of columns
-                    prob += lpSum([int(v)*choices[v][r][co] for v in vals for co in zonecolsholder]) == zonecolssumholder, ""
-                    zonecolssumholder = 0
-                    zonecolsholder = []
-
-        # Col zones
-        for c in cols:
-            zonerowsholder = []
-            activated = False
-            zonerowssumholder = 0
-            for r in rows:
-                if not activated and [int(r)-1,int(c)-1] in self.game.data_fills:
-                    activated = True
-                    zonerowsholder = zonerowsholder +[r]
-                    zonerowssumholder = [elem[0] for elem in self.game.data_totals if elem[1]=='v' and elem[2] == int(r)-2 and elem[3] == int(c)-1][0]
-                    if r == "9":
-                        # Uniqueness in that zone of rows
-                        for v in vals:
-                            prob += lpSum([choices[v][ro][c] for ro in zonerowsholder]) <= 1, ""
-                        # Sum constraint for that zone of rows
-                        prob += lpSum([int(v) * choices[v][ro][c] for v in vals for ro in zonerowsholder]) == zonerowssumholder, ""
-                elif activated and [int(r)-1,int(c)-1] in self.game.data_fills:
-                    zonerowsholder = zonerowsholder + [r]
-                    if r == "9":
-                        # Uniqueness in that zone of rows
-                        for v in vals:
-                            prob += lpSum([choices[v][ro][c] for ro in zonerowsholder]) <= 1, ""
-                        # Sum constraint for that zone of rows
-                        prob += lpSum([int(v) * choices[v][ro][c] for v in vals for ro in zonerowsholder]) == zonerowssumholder, ""
-                elif activated and [int(r)-1,int(c)-1] not in self.game.data_fills:
-                    activated = False
-                    # Uniqueness in that zone of rows
-                    for v in vals:
-                        prob += lpSum([choices[v][ro][c] for ro in zonerowsholder]) <= 1, ""
-                    # Sum constraint for that zone of rows
-                    prob += lpSum([int(v)*choices[v][ro][c] for v in vals for ro in zonerowsholder]) == zonerowssumholder, ""
-                    zonerowssumholder = 0
-                    zonerowsholder = []
-
-        # Force all extraneous values to 1 (arbitrary) | Possibly many times
-        for ite in self.game.data_totals:
-            prob += choices["1"][str(ite[2]+1)][str(ite[3]+1)] == 1, ""
-
-        # Suppress calculation messages
-        GLPK(msg=0).solve(prob)
-        # Solution: The commented print statements are for debugging aid.
-        for v in prob.variables():
-            # print v.name, "=", v.varValue
-            if v.varValue == 1 and [int(v.name[9])-1, int(v.name[11])-1] in self.game.data_fills:
-                # print v.name, ":::", v.varValue, [int(v.name[9])-1, int(v.name[11])-1, int(v.name[7])]
-                self.game.data_filled = self.game.data_filled + [[int(v.name[9])-1, int(v.name[11])-1, int(v.name[7])]]
-        self.draw_puzzle()"""
-
-    def load_another(self):
-        self.game.data_filled = []
-        self.game.data_fills = []
-        self.game.data_totals = []
-        puzzlebank = []
-        try:
-            file = open("C:\\Users\\reza kd\\Desktop\\CSP\\savedpuzzles.txt", "r")
-        except IOError:
-            print("Could not acquire read access to file: savedpuzzles.txt")
-            sys.exit()
-        with file:
-            for line in file:
-                if line.rstrip("\r\n").isdigit():
-                    puzzlebank = puzzlebank + [int(line)]
-            file.close()
-        puzzlebank = [ele for ele in puzzlebank if ele not in self.game.played_so_far]
-        numpuzzles = len(puzzlebank)
-        if len(puzzlebank) == 0:
-            print ("Uh-Oh! You have exhausted the puzzle bank! Gather more puzzles!")
-            sys.exit()
-        print ("There seem to be " + str(numpuzzles) + " unique (untried in this session) puzzles!")
-        print ("Randomly picking one...")
-        ctr = 0
-        currprob = 1.0 / (numpuzzles - ctr)
-        currguess = random.random()
-        while (currguess > currprob and ctr < numpuzzles - 1):
-            ctr = ctr + 1
-            currprob = 1.0 / (numpuzzles - ctr)
-            currguess = random.random()
-        self.game.gameId = puzzlebank[ctr]
-        print ("Selected puzzle: Number " + str(puzzlebank[ctr]) + ". Click anywhere on the grid to begin...")
-        self.game.played_so_far = self.game.played_so_far + [self.game.gameId]
-        file = open("C:\\Users\\reza kd\\Desktop\\CSP\\savedpuzzles.txt", "r")
-        readstatus = 0
-        for line in file:
-            if readstatus == 0 and line.rstrip("\r\n").isdigit():
-                if int(line) == puzzlebank[ctr]:
-                    readstatus = 1
-                    continue
-            if readstatus == 1 and line.rstrip("\r\n").isdigit():
-                break
-            elif readstatus == 1:
-                line = line.rstrip("\r\n")
-                if line[0] == 'e':
-                    self.game.data_fills = self.game.data_fills + [[int(line[1]), int(line[2])]]
-                else:
-                    self.game.data_totals = self.game.data_totals + [[int(line[:-3]), line[-3], int(line[-2]), int(line[-1])]]
-        file.close()
-        self.game.game_over = False
-        self.canvas.delete("victory")
-        self.canvas.delete("circ")
-        self.canvas.delete("grays")
-        self.canvas.delete("grayliners")
-        self.canvas.delete("numbers")
-        self.canvas.delete("grays")
-        self.canvas.delete("numbersfilled")
-        self.parent.title("Kakuro | Puzzle: " + str(self.game.gameId))
-        self.draw_grid()
-        self.draw_puzzle()
+        for var in solutions:
+            print("solution number : \n", var, var[0], var[1], solutions[var])
+            self.set_value(var[0], var[1], solutions[var])

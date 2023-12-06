@@ -9,7 +9,7 @@ class KakuroRandomGame(object):
         self.data_filled = []
         self.data_fills = []
         self.data_totals = []
-        self.data_table = [['x'] * 10 for _ in range(10)]
+        self.data_table = [['x'] * 9 for _ in range(9)]
         puzzlebank = []
         try:
             file = open("C:\\Users\\reza kd\\Desktop\\CSP\\savedpuzzles.txt", "r")
@@ -33,7 +33,7 @@ class KakuroRandomGame(object):
         ctr = 0
         currprob = 1.0/(numpuzzles-ctr)
         currguess = random.random()
-        while (currguess > currprob and ctr < numpuzzles-1):
+        while currguess > currprob and ctr < numpuzzles-1:
             ctr = ctr + 1
             currprob = 1.0 / (numpuzzles-ctr)
             currguess = random.random()
@@ -62,12 +62,12 @@ class KakuroRandomGame(object):
         for [i , j] in self.data_fills:
             self.data_table[i][j] = 0
             
-        print("self.data_fills :", self.data_fills,
-              '\n-------------------------------------\n', "self.data_totals :", self.data_totals)
+        # print("self.data_fills :", self.data_fills,
+        #       '\n-------------------------------------\n', "self.data_totals :", self.data_totals)
         self.game_over = False
 
     def check_win(self):
-        if (len(self.data_filled) == len(self.data_fills)):
+        if len(self.data_filled) == len(self.data_fills):
             for item in self.data_filled:
                 if [item[0], item[1]-1] not in self.data_fills:
                     sumexp = -1
