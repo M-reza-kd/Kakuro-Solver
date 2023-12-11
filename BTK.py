@@ -15,7 +15,7 @@ class BackTrackSolver:
         self.var_constraint = {}
 
     def add_variable(self, variable, domain):
-        self.variables[tuple(variable)] = domain
+        self.variables[tuple(variable)] = domain.copy()
         self.unassigned_var.append(tuple(variable))
 
     def add_constraint(self, constraint):
@@ -70,6 +70,32 @@ class BackTrackSolver:
                 return False
         return True
 
+    def filter_from_neighbors(self, value, var):
+        # print("var, value", var, value)
+        for constraint_ind in self.var_constraint[var]:
+            # print("constraint_ind", constraint_ind)
+            constraint_var, constraint_sum = self.constraints[constraint_ind][0], self.constraints[constraint_ind][1]
+            for v in constraint_var:
+                if v == var:
+                    continue
+                # print("remove variable domain type: ", v, self.variables[tuple(v)])
+                try:
+                    self.variables[tuple(v)].remove(value)
+                    # print("v :", self.variables[tuple(v)])
+                except:
+                    pass
+
+    def add_to_neighbors(self, value, var):
+        for constraint_ind in self.var_constraint[var]:
+            constraint_var, constraint_sum = self.constraints[constraint_ind][0], self.constraints[constraint_ind][1]
+            for v in constraint_var:
+                if v == var:
+                    continue
+                # print("add variable domain type: ", self.variables[tuple(v)])
+                if value not in self.variables[tuple(v)]:
+                    self.variables[tuple(v)].append(value)
+                    # print("v :", self.variables[tuple(v)])
+
     def backtrack(self, assignment, solutions):
         if len(assignment) == len(self.variables):
             solutions.append(assignment.copy())
@@ -77,14 +103,17 @@ class BackTrackSolver:
         var = self.unassigned_var[-1]
         self.unassigned_var.pop(-1)
 
-        for value in self.variables[var]:
+        domain = self.variables[var].copy()
+        for value in domain:
             assignment[var] = value
-            # print("assigned variable:", len(assignment), len(solutions), len(self.variables))
+            # print("assigned variable:", len(assignment), len(self.variables))
             self.data_table[var[0]][var[1]] = value
+            self.filter_from_neighbors(value, var)
             if self.is_consistent_var(var):
                 self.backtrack(assignment, solutions)
                 if len(solutions) == len(self.variables):
                     break
             self.data_table[var[0]][var[1]] = 0
+            self.add_to_neighbors(value, var)
             assignment.pop(var)
         self.unassigned_var.append(var)
