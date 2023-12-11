@@ -34,6 +34,15 @@ class BackTrackSolver:
                 return False
         return True
 
+    def MVC(self):
+        var = self.unassigned_var[-1]
+        domain_len = len(self.variables[var])
+        for v in self.unassigned_var:
+            if len(self.variables[v]) < domain_len:
+                var = v
+                domain_len = len(self.variables[v])
+        return var
+
     def BT_constraint(self, variables, target_sum):
         assigned_values = [self.data_table[var[0]][var[1]] for var in variables if
                            self.data_table[var[0]][var[1]] != 0]
@@ -100,8 +109,9 @@ class BackTrackSolver:
         if len(assignment) == len(self.variables):
             solutions.append(assignment.copy())
             return
-        var = self.unassigned_var[-1]
-        self.unassigned_var.pop(-1)
+        # var = self.unassigned_var[-1]
+        var = self.MVC()
+        self.unassigned_var.remove(var)
 
         domain = self.variables[var].copy()
         for value in domain:
