@@ -37,7 +37,10 @@ class BackTrackSolver:
     def BT_constraint(self, variables, target_sum):
         assigned_values = [self.data_table[var[0]][var[1]] for var in variables if
                            self.data_table[var[0]][var[1]] != 0]
+        # print("BTK", variables, assigned_values, target_sum)
+
         if len(assigned_values) != len(set(assigned_values)):
+            # print("tekrari")
             return False
         if sum(assigned_values) > target_sum:
             return False
@@ -46,6 +49,7 @@ class BackTrackSolver:
         return True
 
     def is_consistent_var(self, var):
+        # print("var constraint ", var, self.var_constraint[var])
         constraint_function = self.BT_constraint
         for i in self.var_constraint[var]:
             constraint = self.constraints[i]
@@ -59,10 +63,11 @@ class BackTrackSolver:
             solutions.append(assignment.copy())
             return
         var = self.unassigned_var[-1]
-        self.unassigned_var.pop(-1)
+        self.unassigned_var.pop()
 
         for value in self.variables[var]:
             assignment[var] = value
+            # print("assigned variable:", len(assignment), len(self.variables))
             self.data_table[var[0]][var[1]] = value
             if self.is_consistent():
                 self.backtrack(assignment, solutions)
@@ -71,4 +76,3 @@ class BackTrackSolver:
             self.data_table[var[0]][var[1]] = 0
             assignment.pop(var)
         self.unassigned_var.append(var)
-

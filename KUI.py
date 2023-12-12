@@ -38,8 +38,21 @@ def load_another():
     ui = KakuroUI(root, game)
     root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
     root.mainloop()
-    ui.solve()
 
+
+def load_for_100_time():
+    global root
+    t = time()
+    print("time to load", t)
+    for i in range(100):
+        if root:
+            root.destroy()
+        game = KakuroRandomGame()
+        root = Tk()
+        ui = KakuroUI(root, game)
+        root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
+        ui.solve()
+    print("average time on 100 try :", (time() - t) / 100)
 
 class KakuroUI(Frame):
     def __init__(self, parent, game):
@@ -248,6 +261,6 @@ class KakuroUI(Frame):
 
         self.back_track_solver.var_constraint = variable_constrain_number
         solutions = self.back_track_solver.solve()[0]
-        print("solution number : \n", solutions)
+        # print("solution number : \n", solutions)
         for var in solutions:
             self.set_value(var[0], var[1], solutions[var])
